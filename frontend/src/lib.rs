@@ -5,6 +5,7 @@ use yew_router::{components::RouterAnchor, router::Router, Switch};
 
 mod owner;
 mod pet;
+mod advert;
 
 pub type Anchor = RouterAnchor<AppRoute>;
 
@@ -16,6 +17,8 @@ pub enum Msg {}
 pub enum AppRoute {
     #[to = "/app/create-owner"]
     CreateOwner,
+    #[to = "/app/advert"]
+    Advert,
     #[to = "/app/create-pet/{id}"]
     CreatePet(i32),
     #[to = "/app/{id}"]
@@ -41,11 +44,11 @@ impl Component for FullStackApp {
 
     fn view(&self) -> Html {
         html! {
-            <div class=classes!("app")>
+            <div class=classes!("app", "container", "mx-auto", "px-4")>
                 <div class=classes!("nav")>
                     <Anchor route=AppRoute::Home>{"Home"}</Anchor>
                 </div>
-                <div class=classes!("content")>
+                <div class=classes!("content", "flex", "justify-center")>
                     <Router<AppRoute, ()>
                         render = Router::render(move |switch: AppRoute| {
                             match switch {
@@ -59,6 +62,12 @@ impl Component for FullStackApp {
                                     html! {
                                         <div>
                                             <pet::create::CreateForm owner_id=owner_id/>
+                                        </div>}
+                                }
+                                AppRoute::Advert => {
+                                    html! {
+                                        <div>
+                                            <advert::show::Advert />
                                         </div>}
                                 }
                                 AppRoute::Detail(owner_id) => {
