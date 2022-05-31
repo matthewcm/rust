@@ -1,0 +1,36 @@
+<html><head>
+    <title>Rust Fullstack Example</title>
+    <link rel="stylesheet" href="/input-aa7fed3eae22bbfc.css">
+    <link rel="stylesheet" href="/tailwind-7c6848fb6708bb37.css">
+    <link rel="stylesheet" href="/style-f42147bbde8e7006.css">
+  
+<link rel="preload" href="/frontend-be56642e14ccedd5_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/frontend-be56642e14ccedd5.js"></head>
+<body><script type="module">import init from '/frontend-be56642e14ccedd5.js';init('/frontend-be56642e14ccedd5_bg.wasm');</script><script>(function () {
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url = protocol + '//' + window.location.host + '/_trunk/ws';
+    var poll_interval = 5000;
+    var reload_upon_connect = () => {
+        window.setTimeout(
+            () => {
+                // when we successfully reconnect, we'll force a
+                // reload (since we presumably lost connection to
+                // trunk due to it being killed, so it will have
+                // rebuilt on restart)
+                var ws = new WebSocket(url);
+                ws.onopen = () => window.location.reload();
+                ws.onclose = reload_upon_connect;
+            },
+            poll_interval);
+    };
+
+    var ws = new WebSocket(url);
+    ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.reload) {
+            window.location.reload();
+        }
+    };
+    ws.onclose = reload_upon_connect;
+})()
+</script></body></html>
