@@ -1,35 +1,39 @@
 use super::method::{Method, MethodError};
-use std::{convert::TryFrom, error::Error, fmt::{ Display, Debug, Formatter, Result as FmtResult}};
+use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt::{ Display, Debug, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
+use super::{QueryString, QueryStringValue};
 
+#[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
-    query_string: Option<&'buf str>,
+    query_string: Option<QueryString<'buf>>,
     method: Method,
+}
+
+impl<'buf> Request<'buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query_string.as_ref()
+    }
+
+
 }
 
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
 
     // GET /search?name=abc&sort=1 HTTP/1.1
-    fn try_from(buf: &'buf [u8]) -> Result<Self, Self::Error>{
+    fn try_from(buf: &'buf [u8]) -> Result<Self, Self::Error> {
 
         let request = str::from_utf8(buf)?;
-
-        // match str::from_utf8(buf) {
-        //     Ok(request) => {},
-        //     Err(_) => Err(ParseError::InvalidEncoding),
-        // }
-
-        // str::from_utf8(buf).or(Err(ParseError::InvalidEncoding)) {
-        //     Ok(request) => {},
-        //     Err(e) => Err(e),
-        // };
-        //
-        //
-
-        str::from_utf8(buf).or(Err(ParseError::InvalidEncoding))?;
 
         let (method,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path ,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
@@ -43,8 +47,8 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
 
         let mut query_string = None;
 
-        if let Some(i) = path.find("?") {
-            query_string = Some(&path[i + 1..]);
+        if let Some(i) = path.find('?') {
+            query_string = Some(QueryString::from(&path[i + 1..]));
             path = &path[..i];
         }
 
@@ -53,10 +57,6 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
             query_string,
             method
         })
-
-
-
-
 
     }
 }
