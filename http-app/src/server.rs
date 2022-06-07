@@ -1,6 +1,6 @@
-use crate::http::{Request};
+use crate::http::{Request, response::{Response}, StatusCode};
 use std::{net::TcpListener};
-use std::io::Read;
+use std::io::{Read, Write};
 
 
 pub struct Server {
@@ -29,6 +29,11 @@ impl Server {
                             match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
                                     dbg!(request);
+
+                                    let response = Response::new(StatusCode::Ok ,Some("<h1> It works! </h1>".to_string()));
+
+                                    write!(stream, "{}", response);
+
                                 },
                                 Err(e) => println!("Failed to parse a request: {}", e)
                             }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::http::StatusCode;
 
 
@@ -14,3 +16,21 @@ impl Response {
 }
 
 
+impl Display for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
+        let body = match &self.body {
+            Some(b)=> b,
+            None => "",
+        };
+
+        write!(
+            f,
+            "HTTP/1.1 {} {}\r\n\r\n{}",
+            self.status_code,
+            self.status_code.reason_phrase(),
+            body
+        )
+    }
+
+}
