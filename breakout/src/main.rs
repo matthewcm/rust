@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 
-const BALL_SIZE: f32 = 5f32;
+const BALL_SIZE: f32 = 20f32;
+const BALL_SPEED: f32 = 200f32;
 const BLOCK_SIZE: Vec2 = const_vec2!([80f32, 40f32]);
 const PLAYER_SIZE: Vec2 = const_vec2!([150f32, 40f32]);
 const PLAYER_SPEED: f32 = 700f32;
@@ -15,13 +16,35 @@ impl Ball {
     pub fn new(pos: Vec2) -> Self {
         Self {
             rect: Rect::new(pos.x, pos.y, BALL_SIZE, BALL_SIZE),
-            vel: vec2(rand::gen_range(-1f32, 1f32),  1f32).normalize(),
+            vel: vec2(rand::gen_range(-1f32, 1f32),  -1f32).normalize(),
         }
     }
 
     pub fn update(&mut self, dt: f32) {
         self.rect.x += self.vel.x * dt * BALL_SPEED;
         self.rect.y += self.vel.y * dt * BALL_SPEED;
+
+        if self.rect.x < 0f32 {
+            self.vel.x = 1f32;
+        }
+
+        if self.rect.x > screen_width() - self.rect.w {
+            self.vel.x = -1f32;
+        }
+
+        if self.rect.y < 0f32 {
+            self.vel.y = 1f32;
+        }
+    }
+
+    pub fn draw(&self) {
+        draw_rectangle(
+            self.rect.x,
+            self.rect.y,
+            self.rect.w,
+            self.rect.h,
+            DARKGRAY
+        )
     }
 }
 
@@ -106,6 +129,7 @@ async fn main() {
     let mut player = Player::new();
 
     let mut blocks = Vec::<Block>::new();
+    let mut balls = Vec::<Ball>::new();
 
 
     let (width, height) = ( 6, 6);
@@ -124,14 +148,25 @@ async fn main() {
 
     }
 
+    balls.push(Ball::new(vec2(screen_width() * 0.5f32, screen_height() * 0.5f32)));
+
 
 
     loop {
         player.update(get_frame_time());
+        balls.iter_mut()
+            .for_each(|ball| { 
+                ball.update(get_frame_time())
+            });
+
+
         clear_background(WHITE);
 
         blocks.iter()
             .for_each(|block| block.draw());
+
+        balls.iter()
+            .for_each(|ball| ball.draw());
         player.draw();
         next_frame().await
     }
