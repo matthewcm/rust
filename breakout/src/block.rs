@@ -16,7 +16,7 @@ impl Block {
                 BLOCK_SIZE.x,
                 BLOCK_SIZE.y,
             ),
-            lives: 1,
+            lives: 2,
         }
     }
 
@@ -25,12 +25,16 @@ impl Block {
     }
     
     pub fn draw(&self) {
+        let colour = match self.lives {
+            2 => RED,
+            _ => DARKGRAY
+        };
         draw_rectangle(
             self.rect.x,
             self.rect.y,
             self.rect.w,
             self.rect.h,
-            DARKGRAY
+            colour
         )
     } 
 }
