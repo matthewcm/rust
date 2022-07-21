@@ -12,7 +12,7 @@ impl Ball {
     pub fn new(pos: Vec2) -> Self {
         Self {
             rect: Rect::new(pos.x, pos.y, BALL_SIZE, BALL_SIZE),
-            vel: vec2(rand::gen_range(-1f32, 1f32),  -1f32).normalize(),
+            vel: vec2(rand::gen_range(-1f32, 1f32),  1f32).normalize(),
         }
     }
 
