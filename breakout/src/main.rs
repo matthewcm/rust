@@ -3,20 +3,28 @@ use macroquad::prelude::*;
 mod ball;
 mod block;
 mod collisions;
+mod game_states;
 mod player;
+mod title_text;
 
 use ball::Ball;
 use block::{Block, BLOCK_SIZE};
 use player::Player;
 
-use crate::collisions::resolve_collision;
+use crate::{collisions::resolve_collision, game_states::GameState, title_text::draw_title_text};
 
 #[macroquad::main("breakout")]
 async fn main() {
+    let font = load_ttf_font("res/ComicMonoNF.ttf").await.unwrap();
+
+    let mut game_state = GameState::Menu;
     let mut player = Player::new();
 
     let mut blocks = Vec::<Block>::new();
     let mut balls = Vec::<Ball>::new();
+
+    let mut score = 0;
+    let mut lives = 3;
 
     let (width, height) = (6, 6);
 
@@ -38,26 +46,71 @@ async fn main() {
 
     balls.push(Ball::new(vec2(
         screen_width() * 0.5f32,
-        screen_height() * 0.5f32,
+        screen_height() * 0.6f32,
     )));
 
     loop {
-        player.update(get_frame_time());
-        balls
-            .iter_mut()
-            .for_each(|ball| ball.update(get_frame_time()));
-
-        balls.iter_mut().for_each(|ball| {
-            resolve_collision(&mut ball.rect, &player.rect, &mut ball.vel);
-
-            blocks.iter_mut().for_each(|block| {
-                if resolve_collision(&mut ball.rect, &block.rect, &mut ball.vel) {
-                    block.lose_life();
+        match game_state {
+            GameState::Menu => {
+                if is_key_pressed(KeyCode::Space) {
+                    game_state = GameState::Game;
                 }
-            })
-        });
+            }
+            GameState::Game => {
+                if is_key_pressed(KeyCode::Space) && balls.is_empty() {
+                    balls.push(Ball::new(vec2(
+                        screen_width() * 0.5f32,
+                        screen_height() * 0.6f32,
+                    )));
+                }
 
-        blocks.retain(|block| block.lives != 0);
+                player.update(get_frame_time());
+                balls
+                    .iter_mut()
+                    .for_each(|ball| ball.update(get_frame_time()));
+
+                balls.iter_mut().for_each(|ball| {
+                    resolve_collision(&mut ball.rect, &player.rect, &mut ball.vel);
+
+                    blocks.iter_mut().for_each(|block| {
+                        if resolve_collision(&mut ball.rect, &block.rect, &mut ball.vel) {
+                            block.lose_life();
+                            score += 10;
+                        }
+                    })
+                });
+
+                blocks.retain(|block| block.lives != 0);
+
+                if blocks.is_empty() {
+                    game_state = GameState::LevelCompleted;
+                }
+
+                let ball_length = balls.len();
+                balls.retain(|ball| ball.rect.y < screen_height());
+
+                let has_lost_balls = ball_length - balls.len() > 0;
+
+                if has_lost_balls && balls.is_empty() {
+                    lives -= 1;
+
+                    if lives == 0 {
+                        game_state = GameState::Dead;
+                    }
+                };
+            }
+
+            GameState::LevelCompleted => {
+                if is_key_pressed(KeyCode::Space) {
+                    game_state = GameState::Game;
+                }
+            }
+            GameState::Dead => {
+                if is_key_pressed(KeyCode::Space) {
+                    game_state = GameState::Game;
+                }
+            }
+        }
 
         clear_background(WHITE);
 
@@ -65,6 +118,44 @@ async fn main() {
 
         balls.iter().for_each(|ball| ball.draw());
         player.draw();
+
+        match game_state {
+            GameState::Menu => {
+                draw_title_text("Press SPACE to start", font);
+            }
+            GameState::Game => {
+                let score_text = &format!("Score: {}", score);
+                let score_width = measure_text(score_text, Some(font), 30u16, 1.0);
+
+                let lives_text = &format!("Lives: {}", lives);
+
+                draw_text_ex(
+                    score_text,
+                    (screen_width() - score_width.width) * 0.5f32,
+                    40f32,
+                    TextParams {
+                        font,
+                        font_size: 30u16,
+                        color: BLACK,
+                        ..Default::default()
+                    },
+                );
+
+                draw_text_ex(
+                    lives_text,
+                    50f32,
+                    40f32,
+                    TextParams {
+                        font,
+                        font_size: 30u16,
+                        color: BLACK,
+                        ..Default::default()
+                    },
+                );
+            }
+            GameState::LevelCompleted => draw_title_text(&format!("You win: {}", score), font),
+            GameState::Dead => draw_title_text(&format!("You lost: {}", score), font),
+        }
         next_frame().await
     }
 }
